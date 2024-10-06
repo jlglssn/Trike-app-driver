@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "654955706625",
+    "firebase_url": "https://trike-toda-application-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "trike-toda-application",
+    "storage_bucket": "trike-toda-application.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:654955706625:android:b339249bb5c9b0fe4b4300",
+        "android_client_info": {
+          "package_name": "com.example.driver_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4Ih0yKtp5tvHvOegt2B24ifoxian_YCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:654955706625:android:002ce4985df91fbb4b4300",
+        "android_client_info": {
+          "package_name": "com.trike.user_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4Ih0yKtp5tvHvOegt2B24ifoxian_YCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
