@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // Import TaskSnapshot for the stream
 
-class ProgressIndicatorWidget extends StatelessWidget {
-  final UploadTask? uploadTask; // Named parameter
+class ProgressBar extends StatelessWidget {
+  final UploadTask? uploadTask; // This allows passing the uploadTask from the main file
 
-  const ProgressIndicatorWidget({Key? key, required this.uploadTask}) : super(key: key); // Use required
+  const ProgressBar({Key? key, this.uploadTask}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +24,8 @@ class ProgressIndicatorWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: Color.fromARGB(255, 204, 245, 215),
-                    color: Color.fromARGB(150, 75, 201, 104),
+                    backgroundColor: const Color.fromARGB(255, 204, 245, 215),
+                    color: const Color.fromARGB(150, 75, 201, 104),
                   ),
                 ),
                 Positioned.fill(
