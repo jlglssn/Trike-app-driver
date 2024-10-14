@@ -9,15 +9,27 @@ plugins {
 }
 
 dependencies {
-    // Import the Firebase BoM
+    // Import the Firebase BoM (Bill of Materials)
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
 
-    // Add Firebase products you want to use
+    // Add Firebase Analytics
     implementation 'com.google.firebase:firebase-analytics'
 
-    // TODO: Add any other Firebase dependencies as needed
-    // For example:
+    // Add Firebase Cloud Messaging for sending/receiving push notifications
+    implementation 'com.google.firebase:firebase-messaging'
+
+    implementation platform('com.google.firebase:firebase-bom:33.4.0')
+
+    // If you're using Firebase Authentication
     // implementation 'com.google.firebase:firebase-auth'
+
+    // If you're using Firebase Realtime Database
+    // implementation 'com.google.firebase:firebase-database'
+
+    // If you're using Firebase Storage
+    // implementation 'com.google.firebase:firebase-storage'
+
+    // If you need Firebase Firestore
     // implementation 'com.google.firebase:firebase-firestore'
 }
 
@@ -36,21 +48,28 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Specify your own unique Application ID
         applicationId = "com.example.driver_application"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdkVersion 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Add multiDex support (if needed)
+        multiDexEnabled true
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing config for the release build
             signingConfig = signingConfigs.debug
+        }
+    }
+
+    // Enable Firebase and FCM services
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.firebase:firebase-messaging:23.0.0'
         }
     }
 }
@@ -58,3 +77,4 @@ android {
 flutter {
     source = "../.."
 }
+apply plugin: 'com.google.gms.google-services'

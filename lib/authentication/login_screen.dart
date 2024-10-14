@@ -1,17 +1,19 @@
-import 'package:driver_application/pages/SampleHomePage.dart';
+import 'package:driver_application/authentication/otp_screen.dart';
+import 'package:driver_application/authentication/upload_driverfiles.dart';
+import 'package:driver_application/methods/fetchUserData.dart';
+import 'package:driver_application/widgets/bottom_navigation_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:driver_application/authentication/passwordreset_screen.dart';
 import 'package:driver_application/authentication/registration_screen.dart';
 import 'package:flutter/gestures.dart';
-import 'package:driver_application/global.dart';
-import 'package:driver_application/pages/home_page.dart';
 import 'package:driver_application/widgets/error_dialog.dart';
-import 'package:driver_application/widgets/loading_dialog.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
-import '../methods/signInWithGoogle.dart';
+import '../methods/phonenum_formatter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,37 +31,32 @@ void showErrorDialog(BuildContext context, String message) {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  TextEditingController emailTextEditingController = TextEditingController();
+  String? token;
+
+  TextEditingController _phoneNumberController = TextEditingController();
   TextEditingController passwordTextEditingController = TextEditingController();
 
   bool isPasswordVisible = false; // Add this boolean to track the password visibility
 
 
-  String emailError = '';
+  String phoneNumberError = '';
   String passwordError = '';
 
   validateLogInForm() async {
-    final String email = emailTextEditingController.text.trim();
     final String password = passwordTextEditingController.text.trim();
+    String phoneNumber = "+63" + _phoneNumberController.text.trim();  // Assuming you have a phone controller
 
     // RegEx patterns
-    final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     final RegExp passwordRegExp = RegExp(r'^(?=.*[A-Z])(?=.*[!@#\$&*~])(?=.*[0-9])(?=.*[a-z]).{8,}$');
 
     setState(() {
-      emailError = '';
       passwordError = '';
+      phoneNumberError = '';
     });
 
     bool hasError = false;
 
-    if (!emailRegExp.hasMatch(email)) {
-      setState(() {
-        emailError = "Invalid email address.";
-      });
-      hasError = true;
-    }
-
+    // Password validation
     if (!passwordRegExp.hasMatch(password)) {
       setState(() {
         passwordError = "Invalid password.";
@@ -69,361 +66,354 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!hasError) {
       try {
-        await loginUserNow();
+        // Fetch all drivers' data from Firebase
+        DatabaseReference userRef = FirebaseDatabase.instance.ref().child('drivers');
+        DataSnapshot snapshot = await userRef.get();
+
+        // Ensure snapshot exists and contains data
+        if (snapshot.exists) {
+          // Manually cast the snapshot value to a Map<String, dynamic>
+          Map<String, dynamic> driversData = Map<String, dynamic>.from(snapshot.value as Map);
+
+          // Iterate over each driver (using their UID)
+          for (String uid in driversData.keys) {
+            // Cast each driver's data to a Map<String, dynamic>
+            Map<String, dynamic> driverData = Map<String, dynamic>.from(driversData[uid]);
+
+            // Check if the phone number matches the input
+            if (driverData.containsKey('phone') && driverData['phone'] == phoneNumber) {
+
+              // Retrieve account status and password
+              String accountStatus = driverData['accountStatus'] ?? '';
+              String dbPassword = driverData['password'] ?? '';
+
+              // Check account status and password
+              if (accountStatus == 'pending') {
+                // Show dialog for pending validation
+                showPendingValidationDialog();
+              } else if (accountStatus == 'approved') {
+                // If the account is approved, check the password
+                if (dbPassword == password) {
+                  // If passwords match, proceed with login
+                  _submitPhoneNumber(context);
+                } else {
+                  setState(() {
+                    passwordError = "Password is incorrect.";
+                  });
+                }
+              } else {
+                // Handle other account statuses if necessary
+                setState(() {
+                  phoneNumberError = "Account is not valid. Please contact support.";
+                });
+              }
+              break;  // Exit the loop once the matching phone number is found
+            }
+          }
+        } else {
+          // Handle case where no user data is found in the database
+          setState(() {
+            phoneNumberError = "No data found for phone number $phoneNumber.";
+          });
+        }
       } on FirebaseAuthException catch (e) {
         setState(() {
           if (e.code == 'user-not-found') {
-            emailError = "Couldn't find your Trike Account";
+            phoneNumberError = "Couldn't find your Trike Account.";
           } else if (e.code == 'wrong-password') {
-            passwordError = "Incorrect email or password.";
-          } else if (e.code == 'invalid-credential') {
-            emailError = "Incorrect email or password.";
-            passwordError = "Incorrect email or password.";
+            passwordError = "Incorrect password.";
           } else {
-            showErrorDialog(context, "An error occurred. Please try again.");
+            phoneNumberError = "An error occurred. Please try again.";
           }
         });
       }
     }
   }
 
-  loginUserNow() async {
+  void showPendingValidationDialog() {
     showDialog(
-        context: context,
-        builder: (BuildContext context) => LoadingDialog(messageTxt: "Please wait...")
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Pending Account Validation"),
+          content: Text("The admin is still validating your account."),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
     );
+  }
 
-    try {
-      final User? firebaseUser = (
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: emailTextEditingController.text.trim(),
-              password: passwordTextEditingController.text.trim()
-          ).catchError((error) {
-            Navigator.pop(context);
+  void showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-            //exception handling
-            if (error is FirebaseAuthException) {
-              switch (error.code) {
-                case 'invalid-email':
-                  emailError = "Invalid email.";
-                  break;
-                case 'user-disabled':
-                  emailError = "This user has been disabled.";
-                  break;
-                case 'invalid-credential':
-                  emailError = "Incorrect email or password.";
-                  passwordError = "Incorrect email or password.";
-                  break;
-                case 'wrong-password':
-                  passwordError = "Incorrect password. Please try again.";
-                  break;
-                case 'network-request-failed':
-                  showErrorDialog(context, "Connection error. Please check your internet connection and try again.");
-                  break;
-                case 'too-many-requests':
-                  showErrorDialog(context, "Your account has been temporarily disabled due to multiple failed login attempts. Please try again later.");
-                default:
-                  showErrorDialog(context, "An error occurred. Please try again.");
-                  break;
+  Future<void> _submitPhoneNumber(BuildContext context) async {
+    String phoneNumber = "+63" + _phoneNumberController.text.trim();  // Ensure the phone number includes the country code
+    FirebaseAuth auth = FirebaseAuth.instance;
 
-              }
-            } else {
-              // Handle any other errors
-              setState(() {
-                showErrorDialog(context, "An unexpected error occurred. Please try again.");
-              });
-            }
-          })
-      ).user;
-
-      //fetching the user's information
-      if (firebaseUser != null) {
-        DatabaseReference ref = FirebaseDatabase.instance.ref().child("users").child(firebaseUser.uid);
-        await ref.once().then((dataSnapshot) {
-          if (dataSnapshot.snapshot.value != null) {
-            if ((dataSnapshot.snapshot.value as Map)["blockStatus"] == "no") {
-              userName = (dataSnapshot.snapshot.value as Map)["name"];
-              userPhone = (dataSnapshot.snapshot.value as Map)["phone"];
-
-              snackBar.showSnackBarMsg("Logged in Successfully", context);
-              // Redirects user to homepage if user's account is not blocked
-              Navigator.push(context, MaterialPageRoute(builder: (c) => const SampleHomePage()));
-
-            } else {
-              Navigator.pop(context);
-              FirebaseAuth.instance.signOut();
-              setState(() {
-                passwordError = "Your account is blocked. Contact admin: jssjmssantos@gmail.com";
-              });
-            }
-          } else {
-            Navigator.pop(context);
-            FirebaseAuth.instance.signOut();
-            setState(() {
-              passwordError = "Your account doesn't exist.";
-            });
-          }
-        });
-      }
-
-    } on FirebaseAuthException catch (ex) {
-      FirebaseAuth.instance.signOut();
-      Navigator.pop(context);
-      setState(() {
-        passwordError = ex.message ?? "An error occurred. Please try again.";
-      });
-    }
+    await auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Handle automatic verification (optional)
+        try {
+          await auth.signInWithCredential(credential);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainScreen()),
+          );
+        } catch (e) {
+          print("Error during automatic sign-in: ${e.toString()}");
+          showErrorDialog(context, "Error during automatic sign-in. Please try again.");
+        }
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        // Handle verification failure
+        print("Verification failed: ${e.message}");
+        showErrorDialog(context, e.message ?? "Verification failed. Please try again.");
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        // OTP code has been sent, navigate to the OTP screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              verificationId: verificationId,
+              isSignup: false, // Login flag
+            ),
+          ),
+        );
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        // Handle auto-retrieval timeout
+        print("Auto-retrieval timeout: $verificationId");
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-            const SizedBox(height: 52,),
-          const Text(
-            "Hello!",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 46,
-                fontWeight: FontWeight.w900
-            ),
-          ),
-          const SizedBox(height: 10,),
-          const Text(
-            "Sign into your Account",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w300
-            ),
-          ),
-          Image.asset(
-            "assets/images/d-registration.png",
-            width: MediaQuery.of(context).size.width * 1,
-            fit: BoxFit.contain, // Ensure image fits within bounds
-          ),
-          const SizedBox(height: 10,),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16.0),
+        child: Center( // Center the content vertically
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              // Center the Column's children vertically
               children: [
-                // Email Text Field
-                TextField(
-                  controller: emailTextEditingController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: "Email Address",
-                    labelStyle: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    errorText: emailError.isEmpty ? null : emailError,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.blue, width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.grey, width: 1),
-                    ),
+                const SizedBox(height: 52),
+                Image.asset(
+                  'assets/images/Login.png',
+                  width: double.infinity,
+                  fit: BoxFit.cover,  // Optional: Adjust the fit as per your requirement
+                ),
+                const Text(
+                  "Hello!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 22,),
-                // Password Text Field
-                TextField(
-                  obscureText: !isPasswordVisible,
-                  controller: passwordTextEditingController,
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    labelStyle: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    errorText: passwordError.isEmpty ? null : passwordError,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.blue, width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.grey, width: 1),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isPasswordVisible = !isPasswordVisible;
-                        });
-                      },
-                    ),
+                const Text(
+                  "Sign in to your account",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
                   ),
                 ),
-                const SizedBox(height: 10),
-                // Forgot Password link
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const PasswordResetScreen()),
-                      );
-                    },
-                    child: const Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        color: Colors.black45,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16,),
-                // Log in button
-                ElevatedButton(
-                  onPressed: () {
-                    validateLogInForm();
-                  },
-                  style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50), // Full width
-                      backgroundColor: Colors.black87,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  child: const Text(
-                      "Log in",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold
-                      )
-                  ),
-                ),
-                const SizedBox(height: 10,),
-                // Sign up link
-                TextButton(
-                  onPressed: null, // No action needed for the button itself
-                  child: RichText(
-                    text: TextSpan(
-                      text: "Don't have an account? ",
-                      style: const TextStyle(
-                        color: Colors.grey, // Style for the first part of the text
-                      ),
-                      children: <TextSpan>[
-                        TextSpan(
-                          text: "Register",
-                          style: const TextStyle(
-                            color: Colors.blue, // Different color for the clickable text
-                            fontWeight: FontWeight.bold, // Make the text bold
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 0, horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      // Email Text Field
+                      TextField(
+                        controller: _phoneNumberController,
+                        keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
+                        inputFormatters: [
+                          //PhoneNumberDisplayFormatter(),
+                          LengthLimitingTextInputFormatter(10)
+                        ],
+                        decoration: InputDecoration(
+                          prefixText: "+63 ",
+                          labelText: "Phone Number",
+                          labelStyle: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
                           ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.push(context, MaterialPageRoute(builder: (c) => const RegistrationScreen()));
-                            },
+                          errorText: phoneNumberError.isEmpty? null
+                              : phoneNumberError,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.blue, width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.grey, width: 1),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Password Text Field
+                      TextField(
+                        obscureText: !isPasswordVisible,
+                        controller: passwordTextEditingController,
+                        keyboardType: TextInputType.text,
+                        decoration: InputDecoration(
+                          labelText: "Password",
+                          labelStyle: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          errorText: passwordError.isEmpty
+                              ? null
+                              : passwordError,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Colors.blue, width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Colors.grey, width: 1),
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isPasswordVisible ? Icons.visibility : Icons
+                                  .visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                isPasswordVisible = !isPasswordVisible;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+
+
+                      const SizedBox(height: 10),
+                      // Forgot Password link
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (
+                                  context) => const PasswordResetScreen()),
+                            );
+                          },
+                          child: const Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                              color: Colors.black45,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Log in button
+                      OutlinedButton(
+                        onPressed: () {
+                          validateLogInForm();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          backgroundColor: Color.fromARGB(255, 75, 201, 104),
+                          side: const BorderSide(
+                              color: Color.fromARGB(150, 75, 201, 104), width: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          "Log in",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Sign up link
+                      TextButton(
+                        onPressed: null,
+                        // No action needed for the button itself
+                        child: RichText(
+                          text: TextSpan(
+                            text: "Don't have an account? ",
+                            style: const TextStyle(
+                              color: Colors
+                                  .grey, // Style for the first part of the text
+                            ),
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: "Register",
+                                style: const TextStyle(
+                                  color: Color.fromARGB(255, 75, 201, 104),
+                                  // Different color for the clickable text
+                                  fontWeight: FontWeight
+                                      .bold, // Make the text bold
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Navigator.push(context, MaterialPageRoute(
+                                        builder: (
+                                            c) => const RegistrationScreen()));
+                                  },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16.0), // Adds padding around the entire Column
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Divider with "Or"
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text(
-                            "Or",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    // Google Login Button
-                    OutlinedButton(
-                      onPressed: () {
-                        AuthService.signInWithGoogle(context);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50), // Full width
-                        side: const BorderSide(
-                          color: Colors.grey, // Border color
-                          width: 1,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // Centers the text & icon
-                        children: [
-                          // Google logo on the left
-                          Image.asset(
-                            "assets/images/google_icon.webp",
-                            width: 24,
-                            height: 24,
-                          ),
-                          const SizedBox(width: 8), // Space between the icon and text
-                          const Expanded(
-                            child: Align(
-                              alignment: Alignment.center, // Center the text within the button
-                              child: Text(
-                                "Login with Google",
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            ]),
+        ),
       ),
-    ),
     );
   }
 }

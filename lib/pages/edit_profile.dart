@@ -1,18 +1,17 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:driver_application/pages/validate_driver.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:driver_application/authentication/passwordreset_screen.dart';
-import 'package:driver_application/pages/change_email.dart';
-import 'package:driver_application/pages/profile_page.dart';
-import 'package:driver_application/pages/trips_page.dart';
-import 'package:driver_application/pages/home_page.dart';
+import 'package:driver_application/methods/push_notification_service.dart';
+import '../methods/custom_page_route.dart';
 import '../methods/fetchUserData.dart';
 import '../widgets/error_dialog.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // Error dialog
 void showErrorDialog(BuildContext context, String message) {
@@ -30,7 +29,26 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  int selectedIndex = 2;
+  String? adminUid;
+  String? adminToken;
+  String? userName;
+
+
+  Future<void> fetchUID () async {
+    String? uid = await fetchUserData.fetchAdminUID();
+
+    adminUid = uid;
+  }
+
+  Future<void> fetchToken () async {
+    fetchUID();
+    userName = await fetchUserData.fetchUserName();
+    String? token = await fetchUserData.getDriverToken(adminUid!);
+
+    adminToken = token;
+    print(token);
+  }
+
   bool isPasswordVisible = false; // Track password visibility
 
   File? _imageFile; // File to store the selected image
@@ -40,46 +58,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final ImagePicker _picker = ImagePicker();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  void onItemTapped(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-        break;
-      case 1:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const TripsScreen()),
-        );
-        break;
-      case 2:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const EditProfilePage()),
-        );
-        break;
-    }
-  }
-
   @override
   void initState() {
+
     super.initState();
     fetchUserData.fetchUserName().then((name) {
       _nameController.text = name;
-    });
-    fetchUserData.fetchUserEmail().then((email) {
-      _emailController.text = email;
     });
     fetchUserData.fetchUserNumber().then((phone) {
       _phoneController.text = phone;
@@ -259,11 +247,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       // Reference to Firebase Realtime Database
       DatabaseReference userRef = FirebaseDatabase.instance.ref().child('users').child(user.uid);
 
-        // Update user information in the database
-        await userRef.update({
-          'name': _nameController.text,
-          'phone': _phoneController.text,
-        });
+      // Update user information in the database
+      await userRef.update({
+        'name': _nameController.text,
+        'phone': _phoneController.text,
+      });
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully!')),
@@ -326,12 +314,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ProfilePage(),
-              ),
-            );
+            Navigator.pop(context);  // Navigate back to the previous page
           },
         ),
         backgroundColor: Colors.white,
@@ -348,79 +331,92 @@ class _EditProfilePageState extends State<EditProfilePage> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-          // -- IMAGE with ICON
-          Stack(
-          children: [
-            CircleAvatar(
-              radius: 65.0,
-              backgroundImage: _imageFile != null
-                  ? FileImage(_imageFile!) // Use FileImage for local images
-                  : NetworkImage(profileUrl ?? 'https://via.placeholder.com/150') as ImageProvider,
-            ),
-          Positioned(
-            bottom: 0,
-            left: 90,
-            child: Container(
-              width: 30, // Width of the container
-              height: 30, // Height of the container
-              decoration: const BoxDecoration(
-                color: Colors.white, // Background color of the container
-                shape: BoxShape.circle, // Makes the background circular
+              // -- IMAGE with ICON
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 65.0,
+                    backgroundImage: _imageFile != null
+                        ? FileImage(_imageFile!) // Use FileImage for local images
+                        : NetworkImage(profileUrl ?? 'https://via.placeholder.com/150') as ImageProvider,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 90,
+                    child: Container(
+                      width: 30, // Width of the container
+                      height: 30, // Height of the container
+                      decoration: const BoxDecoration(
+                        color: Colors.white, // Background color of the container
+                        shape: BoxShape.circle, // Makes the background circular
+                      ),
+                      child: Center(
+                        child: IconButton(
+                          onPressed: selectImage,
+                          icon: const Icon(Icons.add_a_photo, color: Colors.grey), // Icon color
+                          iconSize: 17, // Size of the icon
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Center(
-                child: IconButton(
-                  onPressed: selectImage,
-                  icon: const Icon(Icons.add_a_photo, color: Colors.grey), // Icon color
-                  iconSize: 17, // Size of the icon
-                ),
-              ),
-            ),
-          ),
-          ],
-        ),
 
-        const SizedBox(height: 50),
-        // -- Form Fields
+              const SizedBox(height: 50),
+              // -- Form Fields
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   label: const Text("Name"),
-                  prefixIcon: const Icon(Icons.person),
+                  prefixIcon: const Icon(
+                      Icons.person,
+                      color: Colors.grey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: iconBGColor, width: 2.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: iconBGColor, width: 2.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.green, width: 2.0), // Green when focused
                   ),
                 ),
               ),
-      const SizedBox(height: 16),
-      TextFormField(
-        controller: _phoneController,
-        decoration: InputDecoration(
-          label: const Text("Phone"),
-          prefixIcon: const Icon(Icons.phone),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: iconBGColor, width: 2.0),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide(color: iconBGColor, width: 2.0),
-          ),
-        ),
-      ),
-      const SizedBox(height: 16),
+
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  label: const Text("Phone"),
+                  prefixIcon: const Icon(
+                    Icons.phone,
+                    color: Colors.grey,),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.green, width: 2.0), // Green when focused
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                          builder: (context) => ChangeEmailPage(),
-                        ));
+                    Navigator.push(
+                      context,
+                      CustomPageRoute(page: const PasswordResetScreen()), // Use your custom route
+                    );
                   }, // Show password dialog and save
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white, // Background color of the button
@@ -428,8 +424,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12), // Rounded corners
                       side: BorderSide(
-                        color: iconBGColor, // Border color
-                        width: 2.0, // Border width
+                        color: Colors.grey, // Border color
+                        width: 1.0, // Border width
                       ),
                     ),
                     elevation: 0,
@@ -438,13 +434,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min, // Wrap content size
                     children: <Widget>[
-                      const Icon(Icons.email, color: Color.fromARGB(255, 77, 87, 88)), // Leading icon
+                      const Icon(Icons.lock, color: Colors.grey), // Leading icon
                       const SizedBox(width: 10), // Space between leading icon and text
                       const Expanded(
                         child: Align(
                           alignment: Alignment.centerLeft, // Align text to the left
                           child: Text(
-                            "Change Email Address",
+                            "Change Password",
                             style: TextStyle(
                               fontSize: 16, // Adjust font size
                             ),
@@ -459,98 +455,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: (){
-            Navigator.push(context,
-                MaterialPageRoute(
-                  builder: (context) => const PasswordResetScreen(),
-                ));
-          }, // Show password dialog and save
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white, // Background color of the button
-          foregroundColor: Colors.black, // Color of the text and icon on the button
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Rounded corners
-            side: BorderSide(
-              color: iconBGColor, // Border color
-              width: 2.0, // Border width
-             ),
-            ),
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12), // Padding inside the button
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min, // Wrap content size
-            children: <Widget>[
-              const Icon(Icons.lock, color: Color.fromARGB(255, 77, 87, 88)), // Leading icon
-              const SizedBox(width: 10), // Space between leading icon and text
-              const Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft, // Align text to the left
-                  child: Text(
-                    "Change Password",
-                    style: TextStyle(
-                      fontSize: 16, // Adjust font size
+              const SizedBox(height: 100),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _showPasswordDialogAndSave, // Show password dialog and save
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 75, 201, 104), // Background color of the button
+                    foregroundColor: Colors.white, // Color of the text and icon on the button
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12), // Rounded corners
                     ),
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32), // Padding inside the button
                   ),
+                  child: const Text("Save"),
                 ),
-              ),
-              Transform.scale(
-                scale: 0.8, // Adjust this value to change thickness
-                child: const Icon(Icons.arrow_forward_ios, color: Color.fromARGB(150, 75, 201, 104)), // Trailing icon
               ),
             ],
           ),
         ),
-      ),
-              const SizedBox(height: 100),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _showPasswordDialogAndSave, // Show password dialog and save
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 75, 201, 104), // Background color of the button
-              foregroundColor: Colors.white, // Color of the text and icon on the button
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12), // Rounded corners
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32), // Padding inside the button
-            ),
-            child: const Text("Save"),
-        ),
-      ),
-      ],
-    ),
-    ),
-    ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            label: 'Trips',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: selectedIndex,
-        selectedItemColor: Colors.black87,
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        onTap: onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        enableFeedback: false,
       ),
     );
   }

@@ -1,7 +1,7 @@
+import 'package:driver_application/admin_pages/admin_panel_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-import '../pages/edit_profile.dart';
+import '../methods/fetchUserData.dart';
 import '../pages/home_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/trips_page.dart';
@@ -13,13 +13,41 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  bool isAdmin = false; // Store the admin status
 
   // List of pages to switch between
   final List<Widget> _pages = [
     const HomePage(),
-    const TripsScreen(),
+    const TripsPage(),
     const ProfilePage(),
+    const AdminPanelPage(),
   ];
+
+  // Function to fetch isAdmin status once when the widget is initialized
+  @override
+  void initState() {
+    super.initState();
+    _fetchIsAdmin();
+  }
+
+  Future<void> _fetchIsAdmin() async {
+    try {
+      bool adminStatus = await fetchUserData.fetchIsAdmin();
+      setState(() {
+        isAdmin = adminStatus;
+        // Add the Admin Panel page to the list if the user is an admin
+        if (isAdmin && !_pages.contains(const AdminPanelPage())) {
+          _pages.add(const AdminPanelPage());
+        }
+        // Ensure the _selectedIndex is within valid range
+        if (_selectedIndex >= _pages.length) {
+          _selectedIndex = 0; // Reset to the first index if it exceeds the new list length
+        }
+      });
+    } catch (e) {
+      print("Error fetching admin status: $e");
+    }
+  }
 
   void onItemTapped(int index) {
     setState(() {
@@ -47,26 +75,31 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
+          items: <BottomNavigationBarItem>[
+            const BottomNavigationBarItem(
               icon: Icon(Icons.home_rounded),
               label: 'Home',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.history_outlined),
               label: 'Trips',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.account_circle_outlined),
               label: 'Profile',
             ),
+            if (isAdmin) // Conditionally add the admin item
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.admin_panel_settings_rounded),
+                label: 'Admin',
+              ),
           ],
           currentIndex: _selectedIndex,
           selectedItemColor: Colors.green,
           unselectedItemColor: Colors.grey,
           showSelectedLabels: true,
           showUnselectedLabels: true,
-          onTap: onItemTapped, // Assign the function directly here
+          onTap: onItemTapped,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           enableFeedback: false,

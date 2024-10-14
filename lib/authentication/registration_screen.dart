@@ -1,15 +1,12 @@
 import 'package:driver_application/authentication/upload_driverfiles.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:googleapis/content/v2_1.dart' as googleapis; // Alias for the googleapis import
 import 'package:driver_application/authentication/login_screen.dart';
-import 'package:driver_application/global.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:driver_application/widgets/loading_dialog.dart';
-import 'package:driver_application/pages/home_page.dart';
-
-import '../methods/signInWithGoogle.dart';
+import 'package:flutter/services.dart';
+import '../methods/phonenum_formatter.dart';
+import 'otp_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -19,13 +16,11 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  TextEditingController userNameTextEditingController = TextEditingController();
-  TextEditingController userPhoneTextEditingController = TextEditingController();
-  TextEditingController emailTextEditingController = TextEditingController();
-  TextEditingController passwordTextEditingController = TextEditingController();
-  TextEditingController confirmPasswordTextEditingController = TextEditingController();
-
-  final PageController _pageController = PageController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final FirebaseAuth auth = FirebaseAuth.instance;
 
   String nameError = '';
   String phoneError = '';
@@ -33,112 +28,153 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   String passwordError = '';
   String confirmPasswordError = '';
 
-  validateSignUpForm() {
-    final String name = userNameTextEditingController.text.trim();
-    final String phone = userPhoneTextEditingController.text.trim();
-    final String email = emailTextEditingController.text.trim();
-    final String password = passwordTextEditingController.text.trim();
-    final String confirmPassword = confirmPasswordTextEditingController.text.trim();
 
+  Future<bool> _validateSignupFields() async {
+    String fullName = _nameController.text.trim();
+    String phoneNumber = "+63" + _phoneNumberController.text.trim();  // Ensure phone number includes country code
+    String password = _passwordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
 
-    // RegEx patterns
     final RegExp nameRegExp = RegExp(r'^[a-zA-Z ]{3,}$');
-    final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     final RegExp passwordRegExp = RegExp(r'^(?=.*[A-Z])(?=.*[!@#\$&*~])(?=.*[0-9])(?=.*[a-z]).{8,}$');
 
     setState(() {
       nameError = '';
       phoneError = '';
-      emailError = '';
       passwordError = '';
       confirmPasswordError = '';
     });
 
     bool hasError = false;
 
-    if (!nameRegExp.hasMatch(name)) {
+    // Check if the phone number already exists in the database
+    bool isNumberUsed = await isPhoneNumberUsed(phoneNumber);
+
+    // Name validation
+    if (!nameRegExp.hasMatch(fullName)) {
       setState(() {
         nameError = "Name must be at least 3 letters or more characters.";
       });
       hasError = true;
     }
 
-    if (phone.length != 11) {
+    // Phone number validation
+    if (isNumberUsed) {
       setState(() {
-        phoneError = "Invalid phone number. Must be exactly 11 digits.";
+        phoneError = "Phone number already exists.";
       });
       hasError = true;
     }
 
-    if (!emailRegExp.hasMatch(email)) {
-      setState(() {
-        emailError = "Invalid email address.";
-      });
-      hasError = true;
-    }
-
+    // Password validation
     if (!passwordRegExp.hasMatch(password)) {
       setState(() {
         passwordError = "Password should be: "
             "\nAt least 8 characters long "
             "\nMinimum one uppercase"
+            "\nMinimum one lowercase"
             "\nMinimum one number"
             "\nMinimum one symbol";
       });
       hasError = true;
     }
 
-    if(confirmPassword.isEmpty){
-      confirmPasswordError = "Passwords do not match";
-      hasError = true;
-    }
-    else if(password != confirmPassword){
+    // Confirm password validation
+    if (confirmPassword.isEmpty || password != confirmPassword) {
       setState(() {
         confirmPasswordError = "Passwords do not match";
       });
       hasError = true;
     }
 
-    if (!hasError) {
-      signUpUserNow();
-    }
+    return !hasError;  // Return false if any validation failed
   }
 
-  signUpUserNow() async {
+  void showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => LoadingDialog(messageTxt: "Please wait..."),
+      builder: (context) => AlertDialog(
+        title: const Text("Error"),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      ),
     );
+  }
 
-    try {
-      final User? firebaseUser = (await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailTextEditingController.text.trim(),
-        password: passwordTextEditingController.text.trim(),
-      )).user;
+  // Method to check if phone number exists in the database
+  Future<bool> isPhoneNumberUsed(String phoneNumber) async {
+    DatabaseReference userRef = FirebaseDatabase.instance.ref().child('drivers');
+    DataSnapshot snapshot = await userRef.get();
 
-      Map userDataMap = {
-        "name": userNameTextEditingController.text.trim(),
-        "email": emailTextEditingController.text.trim(),
-        "phone": userPhoneTextEditingController.text.trim(),
-        "id": firebaseUser!.uid,
-        "blockStatus": "no",
-        "role": "driver",
-      };
+    if (snapshot.exists) {
+      // Cast the snapshot value to a Map<String, dynamic>
+      Map<String, dynamic> driversData = Map<String, dynamic>.from(snapshot.value as Map);
 
-      await FirebaseDatabase.instance.ref().child("users").child(firebaseUser.uid).set(userDataMap);
+      // Iterate over each driver and check if the phone number matches
+      for (String uid in driversData.keys) {
+        Map<String, dynamic> driverData = Map<String, dynamic>.from(driversData[uid]);
 
-      Navigator.pop(context);
-      snackBar.showSnackBarMsg("Account created successfully", context);
-
-      // Redirects user to homepage if user's account is valid
-      Navigator.push(context, MaterialPageRoute(builder: (c) => const UploadDriverFilesScreen()));
-    } on FirebaseAuthException catch (ex) {
-      FirebaseAuth.instance.signOut();
-      Navigator.pop(context);
-      setState(() {
-        emailError = ex.message ?? "An error occurred. Please try again.";
-      });
+        // Check if the phone number matches the one in the database
+        if (driverData.containsKey('phone') && driverData['phone'] == phoneNumber) {
+          return true;  // Phone number already exists
+        }
+      }
     }
+
+    return false;  // Phone number does not exist
+  }
+
+  // Method for signing up the user with phone number
+  Future<void> _submitSignUp(BuildContext context) async {
+    if (await _validateSignupFields() == false) {
+      return; // Stop further execution if validation fails
+    }
+
+    String phoneNumber = "+63" + _phoneNumberController.text.trim();
+
+    await auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        try {
+          await auth.signInWithCredential(credential);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const UploadDriverFilesScreen()),
+          );
+        } catch (e) {
+          print("Error during automatic sign-in: ${e.toString()}");
+          showErrorDialog(context, "Error during automatic sign-in. Please try again.");
+        }
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        print("Verification failed: ${e.message}");
+        showErrorDialog(context, e.message ?? "Verification failed. Please try again.");
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              verificationId: verificationId,
+              isSignup: true, // Sign-up flag
+              name: _nameController.text.trim(),
+              phoneNumber: _phoneNumberController.text.trim(),
+              password: _passwordController.text.trim(),
+            ),
+          ),
+        );
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        print("Auto-retrieval timeout: $verificationId");
+      },
+    );
   }
 
   @override
@@ -146,7 +182,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 12),
           child: Column(
             children: [
               const SizedBox(height: 52,),
@@ -173,7 +209,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   children: [
                     // Username Text Field
                     TextField(
-                      controller: userNameTextEditingController,
+                      controller: _nameController,
                       keyboardType: TextInputType.text,
                       decoration: InputDecoration(
                         labelText: "Full Name",
@@ -199,9 +235,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     const SizedBox(height: 16,),
                     // User Phone Text Field
                     TextField(
-                      controller: userPhoneTextEditingController,
-                      keyboardType: TextInputType.text,
+                      controller: _phoneNumberController,
+                      keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
+                      inputFormatters: [
+                        //PhoneNumberDisplayFormatter(),
+                        LengthLimitingTextInputFormatter(10)
+                      ],
                       decoration: InputDecoration(
+                        prefixText: "+63 ",
                         labelText: "Phone Number",
                         labelStyle: const TextStyle(
                           fontSize: 14,
@@ -223,36 +264,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                     ),
                     const SizedBox(height: 16,),
-                    // Email Text Field
-                    TextField(
-                      controller: emailTextEditingController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: "Email Address",
-                        labelStyle: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        errorText: emailError.isEmpty ? null : emailError,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.blue, width: 2),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey, width: 1),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16,),
                     // Password Text Field
                     TextField(
                       obscureText: true,
-                      controller: passwordTextEditingController,
+                      controller: _passwordController,
                       keyboardType: TextInputType.text,
                       decoration: InputDecoration(
                         labelText: "Password",
@@ -279,7 +294,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     // Confirm Password Text Field
                     TextField(
                       obscureText: true,
-                      controller: confirmPasswordTextEditingController,
+                      controller: _confirmPasswordController,
                       keyboardType: TextInputType.text,
                       decoration: InputDecoration(
                         labelText: "Confirm Password",
@@ -306,7 +321,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     // Register button
                     ElevatedButton(
                       onPressed: () {
-                        validateSignUpForm();
+                        _submitSignUp(context);
                       },
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50), // Full width
@@ -341,7 +356,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                     children: <TextSpan>[
                       TextSpan(
-                        text: "Login here",
+                        text: "Login",
                         style: const TextStyle(
                           color: Colors.blue, // Different color for the clickable text
                           fontWeight: FontWeight.bold, // Make the text bold
@@ -353,79 +368,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ),
                     ],
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16.0), // Adds padding around the entire Column
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Divider with "Or"
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text(
-                            "Or",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    // Google Login Button
-                    OutlinedButton(
-                      onPressed: () {
-                        AuthService.signInWithGoogle(context);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50), // Full width
-                        side: const BorderSide(
-                          color: Colors.grey, // Border color
-                          width: 1,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // Centers the text & icon
-                        children: [
-                          // Google logo on the left
-                          Image.asset(
-                            "assets/images/google_icon.webp",
-                            width: 24,
-                            height: 24,
-                          ),
-                          const SizedBox(width: 8), // Space between the icon and text
-                          const Expanded(
-                            child: Align(
-                              alignment: Alignment.center, // Center the text within the button
-                              child: Text(
-                                "Login with Google",
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],

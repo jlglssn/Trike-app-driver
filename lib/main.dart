@@ -1,15 +1,30 @@
 import 'dart:io';
+import 'package:driver_application/api/firebase_api.dart';
+import 'package:driver_application/pages/home_page.dart';
+import 'package:driver_application/pages/validate_driver.dart';
+import 'package:driver_application/testingpurposes/access_data.dart';
 import 'package:driver_application/widgets/bottom_navigation_bar.dart';
+import 'package:driver_application/widgets/validate_driver.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // Import Firebase Messaging
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'appInfo/app_info.dart';
 import 'authentication/login_screen.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  runApp(
+    MaterialApp(
+      navigatorKey: navigatorKey, // Use the GlobalKey here
+      home: MainScreen(),
+      // Define your routes here, if necessary
+    ),
+  );
 
   try {
     if (Platform.isAndroid) {
@@ -27,6 +42,7 @@ void main() async{
       );
     } else {
       await Firebase.initializeApp();
+      await FirebaseApi().initNotifications();
     }
   } catch (e) {
     print("Error initializing Firebase: $e");
@@ -36,15 +52,82 @@ void main() async{
 
   runApp(const MyApp());
 }
+
+
 Future<void> _checkAndRequestLocationPermission() async {
   final status = await Permission.locationWhenInUse.status;
   if (status.isDenied) {
     await Permission.locationWhenInUse.request();
+  } else if (status.isPermanentlyDenied) {
+    // Open app settings if permission is permanently denied
+    await openAppSettings();
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  String? _driverToken;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _submitTokenToDatabase(context);
+  }
+
+  // When notification tapped, pass the context
+  void onNotificationTapped(String payload) {
+    // Navigate to your desired screen here
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ValidateDriverPage(driverUid: payload)),
+    );
+  }
+
+  Future<void> onSelectNotification(String? payload) async {
+    if (payload != null) {
+      // Navigate to the desired screen using the payload (which can be your driverUid)
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ValidateDriverPage(driverUid: payload)),
+      );
+    }
+  }
+
+  Future<void> _submitTokenToDatabase(BuildContext context) async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission();
+
+      String? token = await messaging.getToken();
+
+      FirebaseAuth auth = FirebaseAuth.instance;
+      User? firebaseUser = auth.currentUser;
+
+      if (firebaseUser != null) {
+        // Storing token in Firebase Realtime Database
+        Map<String, String> tokenDataMap = {
+          "token": token!,
+        };
+
+        await FirebaseDatabase.instance
+            .ref()
+            .child("users")
+            .child(firebaseUser.uid)
+            .update(tokenDataMap); // Use `update` to avoid overwriting other data
+
+        print("Token: $token updated");
+      }
+    } catch (e) {
+      print("Error during token submission: ${e.toString()}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +143,39 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         initialRoute: FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
         routes: {
-          '/home': (context) => MainScreen(),
           '/login': (context) => const LoginScreen(),
+          '/home': (context) => MainScreen(),
+          // Other routes can be added here
         },
       ),
+    );
+  }
+}
+
+// New widget to check user authentication status
+class AuthCheck extends StatelessWidget {
+  const AuthCheck({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show a loading indicator while checking auth status
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        } else if (snapshot.hasData) {
+          // User is logged in, navigate to home screen
+          return const HomePage();
+        } else {
+          // User is not logged in, navigate to login screen
+          return const LoginScreen();
+        }
+      },
     );
   }
 }

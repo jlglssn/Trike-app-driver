@@ -123,8 +123,8 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       key: sKey,
-      drawer: const Drawer(
-        child: MenuPage(),
+      drawer: Drawer(
+        child: const MenuPage(),
       ),
       body: Stack(
         children: [

@@ -13,7 +13,28 @@
           "package_name": "com.example.driver_application"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "654955706625-hmvmo1cv4cp1llgbkfbk8s28lf4sglm2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.driver_application",
+            "certificate_hash": "4557ccea44a9ba623c8b3db723c1a511191c9ba5"
+          }
+        },
+        {
+          "client_id": "654955706625-l2h7f5gp9pc1qk57vp3gb7jdh60pq12v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.driver_application",
+            "certificate_hash": "139bc07c0cc43a19321f3bb5deea6d9c2c34c3b1"
+          }
+        },
+        {
+          "client_id": "654955706625-got0e6er6k5u7egjc05c02scscslir8j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD4Ih0yKtp5tvHvOegt2B24ifoxian_YCc"
@@ -21,7 +42,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "654955706625-got0e6er6k5u7egjc05c02scscslir8j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -32,7 +58,28 @@
           "package_name": "com.trike.user_application"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "654955706625-u1f3aegdo4add1q4hqq9vs0evemct48m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.trike.user_application",
+            "certificate_hash": "139bc07c0cc43a19321f3bb5deea6d9c2c34c3b1"
+          }
+        },
+        {
+          "client_id": "654955706625-v4lgjd076u7iik3cco0ch3v5replrbb5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.trike.user_application",
+            "certificate_hash": "e8c9868329aa798d7c3a4f52a33479ebd5b17161"
+          }
+        },
+        {
+          "client_id": "654955706625-got0e6er6k5u7egjc05c02scscslir8j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD4Ih0yKtp5tvHvOegt2B24ifoxian_YCc"
@@ -40,7 +87,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "654955706625-got0e6er6k5u7egjc05c02scscslir8j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
