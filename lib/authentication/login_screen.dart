@@ -12,6 +12,7 @@ import 'package:driver_application/widgets/error_dialog.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../methods/phonenum_formatter.dart';
 
@@ -31,6 +32,10 @@ void showErrorDialog(BuildContext context, String message) {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  FlutterLocalNotificationsPlugin();
+
   String? token;
 
   TextEditingController _phoneNumberController = TextEditingController();
@@ -41,6 +46,43 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String phoneNumberError = '';
   String passwordError = '';
+
+  void initState() {
+    super.initState();
+
+    // Initialize local notifications for showing foreground notifications
+    var androidSettings = const AndroidInitializationSettings('@mipmap/ic_launcher');
+    var initializationSettings = InitializationSettings(android: androidSettings);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // Request notification permissions
+    _firebaseMessaging.requestPermission();
+
+    // Listen to foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("Foreground notification received: ${message.notification?.title}");
+      _showNotification(message);
+    });
+  }
+
+  ///FOR FOREGROUND NOTIFICATION
+  Future<void> _showNotification(RemoteMessage message) async {
+    var androidDetails = const AndroidNotificationDetails(
+      'channel_id', 'channel_name',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+
+    var notificationDetails = NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      message.notification?.title,
+      message.notification?.body,
+      notificationDetails,
+    );
+  }
 
   validateLogInForm() async {
     final String password = passwordTextEditingController.text.trim();

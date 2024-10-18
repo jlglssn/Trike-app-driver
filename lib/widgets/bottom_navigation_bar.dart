@@ -90,7 +90,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             if (isAdmin) // Conditionally add the admin item
               const BottomNavigationBarItem(
-                icon: Icon(Icons.admin_panel_settings_rounded),
+                icon: Icon(Icons.admin_panel_settings_outlined),
                 label: 'Admin',
               ),
           ],

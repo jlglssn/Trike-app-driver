@@ -28,69 +28,9 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  File? _imageFile; // Store the selected image here
   int selectedIndex = 2;
 
-  final String? profileUrl = null; // Assume this value comes from user data (null means no profile picture)
-
-  // Function to request permission for camera or gallery
-  Future<void> _pickImage(ImageSource source) async {
-    // Request permission to access the gallery or camera
-    PermissionStatus permissionStatus;
-
-    if (source == ImageSource.camera) {
-      permissionStatus = await Permission.camera.request();
-    } else {
-      permissionStatus = await Permission.photos.request();
-    }
-
-    if (permissionStatus.isGranted) {
-      // Pick image from the specified source
-      final pickedFile = await ImagePicker().pickImage(source: source);
-
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = File(pickedFile.path);
-        });
-      }
-    } else {
-      // Permission denied
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permission denied. Please enable it from settings.')),
-      );
-    }
-  }
-
-  // Show dialog to choose between camera and gallery
-  Future<void> _showImageSourceActionSheet(BuildContext context) async {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Take Photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  String? profileUrl = null; // Assume this value comes from user data (null means no profile picture)
 
   Future<void> logOut(BuildContext context) async {
 
@@ -115,7 +55,12 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    fetchUserData.fetchUserName(); // Fetch user's full name on widget load
+    fetchUserData.fetchUserName();
+    fetchUserData.fetchPic().then((url) {
+      setState(() {
+        profileUrl = url;
+      });
+    });// Fetch user's full name on widget load
   }
 
   // Function to show the log-out confirmation dialog
@@ -170,36 +115,16 @@ class _ProfilePageState extends State<ProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 30), // Add spacing at the top
-            Stack(
-              children: [
-                const CircleAvatar(
-                  radius: 64,
-                  backgroundImage: NetworkImage(
-                    'https://img.freepik.com/premium-vector/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-vector-illustration_561158-3383.jpg',
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 90,
-                  child: Container(
-                    width: 30, // Width of the container
-                    height: 30, // Height of the container
-                    decoration: const BoxDecoration(
-                      color: Colors.white, // Background color of the container
-                      shape: BoxShape.circle, // Makes the background circular
-                    ),
-                    child: Center(
-                      child: IconButton(
-                        onPressed: () {
-                          // Your onPressed logic here
-                        },
-                        icon: const Icon(Icons.add_a_photo, color: Colors.grey), // Icon color
-                        iconSize: 17, // Size of the icon
+            Center(
+                child: Column(
+                    children:[
+                      CircleAvatar(
+                        radius: 65.0,
+                        backgroundImage: profileUrl != null ? NetworkImage(profileUrl!) // Load the image from the network
+                            : const AssetImage('assets/images/driver.png') as ImageProvider, // Fallback to a local image if URL is null or empty
                       ),
-                    ),
-                  ),
-                ),
-              ],
+                    ]
+                )
             ),
             const SizedBox(height: 20),
             Expanded(

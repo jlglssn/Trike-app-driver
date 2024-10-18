@@ -182,10 +182,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             children: [
-              const SizedBox(height: 52,),
+              const SizedBox(height: 16),
+              Image.asset(
+                'assets/images/Login.png',
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
               const Text(
                 "Hello!",
                 textAlign: TextAlign.center,
@@ -319,24 +324,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                     const SizedBox(height: 16,),
                     // Register button
-                    ElevatedButton(
+                    OutlinedButton(
                       onPressed: () {
                         _submitSignUp(context);
                       },
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50), // Full width
-                        backgroundColor: Colors.black87,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                        backgroundColor: Color.fromARGB(255, 75, 201, 104),
+                        side: const BorderSide(
+                            color: Color.fromARGB(150, 75, 201, 104), width: 2),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: const Text(
-                          "Next",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold
-                          )
+                        "Register",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -358,7 +365,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       TextSpan(
                         text: "Login",
                         style: const TextStyle(
-                          color: Colors.blue, // Different color for the clickable text
+                          color: Colors.green, // Different color for the clickable text
                           fontWeight: FontWeight.bold, // Make the text bold
                         ),
                         recognizer: TapGestureRecognizer()

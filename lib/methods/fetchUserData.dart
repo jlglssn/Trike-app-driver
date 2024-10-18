@@ -106,7 +106,7 @@ class fetchUserData{
 
   static Future<String?> fetchAdminUID() async {
     // Reference to the users node in your Firebase Realtime Database
-    DatabaseReference usersRef = FirebaseDatabase.instance.ref().child('users');
+    DatabaseReference usersRef = FirebaseDatabase.instance.ref().child('drivers');
 
     try {
       // Fetch data from the users node
@@ -152,25 +152,51 @@ class fetchUserData{
     }
   }
 
-  static Future<String> fetchUserProfilePicture() async {
-    User? user = FirebaseAuth.instance.currentUser; // Get the currently authenticated user
-
-    if (user != null) {
-      // Reference to the user's data in the Firebase Realtime Database
-      DatabaseReference userRef = FirebaseDatabase.instance
-          .ref()
-          .child('drivers')
-          .child(user.uid);
-
-      // Fetch the profile picture URL from the user's data
-      DataSnapshot snapshot = await userRef.child('picUrl').get();
-
-      if (snapshot.exists) {
-        return snapshot.value as String;
-      }
+  static Future<String> fetchBodyNumber() async {
+    final userId = await UserService.instance.getCurrentUserId();
+    if (userId == null) {
+      return 'Unknown User';
     }
 
-    // Return a default/fallback value if no profile picture is set
-    return '';
+    final DatabaseReference userRef = FirebaseDatabase.instance.ref('drivers/$userId');
+    final DataSnapshot snapshot = await userRef.get();
+    if (snapshot.exists) {
+      final userData = snapshot.value as Map<dynamic, dynamic>;
+      return userData['bodyNumber'] ?? 'Unknown User';
+    } else {
+      return 'Unknown User';
+    }
+  }
+
+  static Future<String> fetchPlateNumber() async {
+    final userId = await UserService.instance.getCurrentUserId();
+    if (userId == null) {
+      return 'Unknown User';
+    }
+
+    final DatabaseReference userRef = FirebaseDatabase.instance.ref('drivers/$userId');
+    final DataSnapshot snapshot = await userRef.get();
+    if (snapshot.exists) {
+      final userData = snapshot.value as Map<dynamic, dynamic>;
+      return userData['plateNumber'] ?? 'Unknown User';
+    } else {
+      return 'Unknown User';
+    }
+  }
+
+  static Future<String> fetchPic() async {
+    final userId = await UserService.instance.getCurrentUserId();
+    if (userId == null) {
+      return 'Unknown User';
+    }
+
+    final DatabaseReference userRef = FirebaseDatabase.instance.ref('drivers/$userId');
+    final DataSnapshot snapshot = await userRef.get();
+    if (snapshot.exists) {
+      final userData = snapshot.value as Map<dynamic, dynamic>;
+      return userData['picUrl'] ?? 'Unknown User';
+    } else {
+      return 'Unknown User';
+    }
   }
 }

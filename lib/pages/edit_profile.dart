@@ -32,6 +32,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String? adminUid;
   String? adminToken;
   String? userName;
+  String? dbPassword;
+  String? bodyNum;
+  String? plateNum;
 
 
   Future<void> fetchUID () async {
@@ -52,13 +55,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool isPasswordVisible = false; // Track password visibility
 
   File? _imageFile; // File to store the selected image
-  Uint8List? _image; // Image data for in-memory image
   String? profileUrl; // URL for profile image from Firebase Storage
+
 
   final ImagePicker _picker = ImagePicker();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _bodyNumController = TextEditingController();
+  final TextEditingController _plateNumController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -72,10 +77,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     fetchUserData.fetchUserNumber().then((phone) {
       _phoneController.text = phone;
     });
-    fetchUserData.fetchUserProfilePicture().then((url) {
+    fetchUserData.fetchPic().then((url) {
       setState(() {
         profileUrl = url;
       });
+    });
+    fetchUserData.fetchUserPassword().then((password) {
+      setState(() {
+        dbPassword = password;
+      });
+    });
+    fetchUserData.fetchBodyNumber().then((bodyNumber) {
+      _bodyNumController.text = bodyNumber;
+    });
+    fetchUserData.fetchPlateNumber().then((plateNumber) {
+      _plateNumController.text = plateNumber;
     });
   }
 
@@ -200,21 +216,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   User? user = FirebaseAuth.instance.currentUser;
                   if (user != null) {
                     // Re-authenticate user with email and password
-                    AuthCredential credential = EmailAuthProvider.credential(
-                      email: user.email!,
-                      password: password,
-                    );
-
                     try {
-                      await user.reauthenticateWithCredential(credential);
-                      // Password is correct; proceed to update the data
-                      print("Re-authentication successful");
+                      if(password == dbPassword){
+                        print("Re-authentication successful");
 
-                      // Call the method to save the updated user information
-                      await _updateUserInfo();
+                        // Call the method to save the updated user information
+                        await _updateUserInfo();
 
-                      // Close the dialog after success
-                      Navigator.of(context).pop();
+                        // Close the dialog after success
+                        Navigator.of(context).pop();
+                      }
                     } on FirebaseAuthException catch (e) {
                       // Handle incorrect password
                       print("Re-authentication failed: ${e.message}");
@@ -263,48 +274,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<void> _showErrorDialog(String message) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Error"),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showSuccessDialog(String message) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Success"),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the success dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     Color iconBGColor = const Color.fromARGB(255, 204, 245, 215);
@@ -332,34 +301,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Column(
             children: [
               // -- IMAGE with ICON
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 65.0,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!) // Use FileImage for local images
-                        : NetworkImage(profileUrl ?? 'https://via.placeholder.com/150') as ImageProvider,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 90,
-                    child: Container(
-                      width: 30, // Width of the container
-                      height: 30, // Height of the container
-                      decoration: const BoxDecoration(
-                        color: Colors.white, // Background color of the container
-                        shape: BoxShape.circle, // Makes the background circular
-                      ),
-                      child: Center(
-                        child: IconButton(
-                          onPressed: selectImage,
-                          icon: const Icon(Icons.add_a_photo, color: Colors.grey), // Icon color
-                          iconSize: 17, // Size of the icon
+              Center(
+                  child: Column(
+                      children:[
+                        CircleAvatar(
+                          radius: 65.0,
+                          backgroundImage: profileUrl != null ? NetworkImage(profileUrl!) // Load the image from the network
+                              : const AssetImage('assets/images/driver.png') as ImageProvider, // Fallback to a local image if URL is null or empty
                         ),
-                      ),
-                    ),
-                  ),
-                ],
+                      ]
+                  )
               ),
 
               const SizedBox(height: 50),
@@ -409,49 +360,47 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: (){
-                    Navigator.push(
-                      context,
-                      CustomPageRoute(page: const PasswordResetScreen()), // Use your custom route
-                    );
-                  }, // Show password dialog and save
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white, // Background color of the button
-                    foregroundColor: Colors.black, // Color of the text and icon on the button
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12), // Rounded corners
-                      side: BorderSide(
-                        color: Colors.grey, // Border color
-                        width: 1.0, // Border width
-                      ),
-                    ),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12), // Padding inside the button
+              TextFormField(
+                controller: _bodyNumController,
+                decoration: InputDecoration(
+                  label: const Text("Body Number"),
+                  prefixIcon: const Icon(
+                      Icons.person,
+                      color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min, // Wrap content size
-                    children: <Widget>[
-                      const Icon(Icons.lock, color: Colors.grey), // Leading icon
-                      const SizedBox(width: 10), // Space between leading icon and text
-                      const Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft, // Align text to the left
-                          child: Text(
-                            "Change Password",
-                            style: TextStyle(
-                              fontSize: 16, // Adjust font size
-                            ),
-                          ),
-                        ),
-                      ),
-                      Transform.scale(
-                        scale: 0.8, // Adjust this value to change thickness
-                        child: const Icon(Icons.arrow_forward_ios, color: Color.fromARGB(150, 75, 201, 104)), // Trailing icon
-                      ),
-                    ],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.green, width: 2.0), // Green when focused
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _plateNumController,
+                decoration: InputDecoration(
+                  label: const Text("Plate Number"),
+                  prefixIcon: const Icon(
+                      Icons.person,
+                      color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Default gray color
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.green, width: 2.0), // Green when focused
                   ),
                 ),
               ),

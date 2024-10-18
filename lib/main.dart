@@ -4,7 +4,7 @@ import 'package:driver_application/pages/home_page.dart';
 import 'package:driver_application/pages/validate_driver.dart';
 import 'package:driver_application/testingpurposes/access_data.dart';
 import 'package:driver_application/widgets/bottom_navigation_bar.dart';
-import 'package:driver_application/widgets/validate_driver.dart';
+import 'package:driver_application/widgets/setup_token.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -17,14 +17,6 @@ import 'authentication/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  runApp(
-    MaterialApp(
-      navigatorKey: navigatorKey, // Use the GlobalKey here
-      home: MainScreen(),
-      // Define your routes here, if necessary
-    ),
-  );
 
   try {
     if (Platform.isAndroid) {
@@ -52,7 +44,6 @@ void main() async {
 
   runApp(const MyApp());
 }
-
 
 Future<void> _checkAndRequestLocationPermission() async {
   final status = await Permission.locationWhenInUse.status;
@@ -92,7 +83,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> onSelectNotification(String? payload) async {
     if (payload != null) {
-      // Navigate to the desired screen using the payload (which can be your driverUid)
+      // Navigate to the desired screen using the payload
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => ValidateDriverPage(driverUid: payload)),
@@ -141,7 +132,7 @@ class _MyAppState extends State<MyApp> {
           fontFamily: 'Roboto', // Set default font family
         ),
         debugShowCheckedModeBanner: false,
-        initialRoute: FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
+        home: AuthCheck(),
         routes: {
           '/login': (context) => const LoginScreen(),
           '/home': (context) => MainScreen(),
@@ -170,7 +161,7 @@ class AuthCheck extends StatelessWidget {
           );
         } else if (snapshot.hasData) {
           // User is logged in, navigate to home screen
-          return const HomePage();
+          return MainScreen();
         } else {
           // User is not logged in, navigate to login screen
           return const LoginScreen();

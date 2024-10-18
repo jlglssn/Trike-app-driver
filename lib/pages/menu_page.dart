@@ -7,256 +7,183 @@ import 'package:driver_application/pages/profile_page.dart';
 import '../widgets/loading_dialog.dart';
 import 'about_page.dart'; // Ensure this path is correct
 
-class MenuPage extends StatelessWidget {
+class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
 
-  final String? profileUrl = null; // Assume this value comes from user data (null means no profile picture)
+  @override
+  _MenuPageState createState() => _MenuPageState();
+}
+
+class _MenuPageState extends State<MenuPage> {
+  String? profileUrl;
+  bool isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Example: Fetching user data in initState
+    fetchUserData.fetchPic().then((url) {
+      setState(() {
+        profileUrl = url;
+      });
+    });
+
+    fetchUserData.fetchIsAdmin().then((isAdminResult) {
+      setState(() {
+        isAdmin = isAdminResult;
+      });
+    });
+  }
 
   Future<void> logOut(BuildContext context) async {
-
     showDialog(
         context: context,
-        builder: (BuildContext context) => LoadingDialog(messageTxt: "Logging out...")
-
-    );
-    // Introduce a small delay (e.g., 1 second) to ensure the dialog is displayed
+        builder: (BuildContext context) => LoadingDialog(messageTxt: "Logging out..."));
     await Future.delayed(const Duration(seconds: 1));
 
     try {
       await UserService.instance.logout(context);
-      // Navigate to login or splash screen
-      Navigator.pushReplacementNamed(context, '/login'); //navigates to login screen
+      Navigator.pushReplacementNamed(context, '/login'); // Navigate to login screen
     } catch (e) {
       print("Error signing out: $e");
-      // Optionally show an error message
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isAdmin = false;
-    return FutureBuilder<bool>(
-        future: fetchUserData.fetchIsAdmin(), // Asynchronous call
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator()); // Loading state
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error fetching data')); // Error state
-          }
-
-          if (snapshot.hasData) {
-            isAdmin = snapshot.data!;
-          }
-
-          return Drawer(
-            child: Container(
-              color: const Color(0xffefefef),
-              // Set the background color of the Drawer to grey
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Drawer(
+      child: Container(
+        color: const Color(0xffefefef),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Profile picture and name section
+            Container(
+              width: double.infinity,
+              height: 150,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(24.0)),
+              ),
+              child: Row(
                 children: [
-
-                  /// Name & Profile Picture
-                  Container(
-                    width: double.infinity,
-                    // Full width of the drawer
-                    height: 150,
-                    // Set a fixed height for the container
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0, vertical: 16),
-                    decoration: const BoxDecoration(
-                      color: Colors.white, // Background color of the header
-                      borderRadius: BorderRadius.all(Radius.circular(24.0)),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          // Adjust the size to fit
-                          backgroundColor: const Color(0xffefefef),
-                          backgroundImage: profileUrl != null
-                              ? NetworkImage(profileUrl!)
-                              : null,
-                          // Use the URL if available, otherwise show fallback
-                          child: profileUrl == null
-                              ? const Icon(Icons.person, size: 28, color: Colors
-                              .grey,) // Default fallback icon
-                              : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: FutureBuilder<String>(
-                            future: fetchUserData.fetchUserName(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                              if (snapshot.hasError) {
-                                return const Center(
-                                    child: Text('Error fetching name'));
-                              }
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2.0),
-                                    // Adjust this value to move the name down
-                                    child: InkWell(
-                                      onTap: () {
-                                        // Handle name click
-                                        print('Name clicked');
-                                        // Navigate to a different page or perform an action
-                                      },
-                                      child: Text(
-                                        snapshot.data ?? 'Unknown User',
-                                        style: const TextStyle(
-                                            color: Colors.black, fontSize: 18),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  InkWell(
-                                    onTap: () {
-                                      // Handle account click
-                                      Navigator.push(context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ProfilePage(),
-                                          ));
-                                      // Navigate to a different page or perform an action
-                                    },
-                                    child: const Text(
-                                      'My Account',
-                                      style: TextStyle(color: Colors.green),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: const Color(0xffefefef),
+                    backgroundImage: profileUrl != null ? NetworkImage(profileUrl!) : null,
+                    child: profileUrl == null
+                        ? const Icon(Icons.person, size: 28, color: Colors.grey)
+                        : null,
                   ),
-
-                  const SizedBox(height: 8),
-                  // Add spacing between header and list items
-
-                  /// Drawer Navigation
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white, // Background color for the list items
-                      borderRadius: BorderRadius.all(Radius.circular(24.0)),
-                    ),
-                    child: Column(
-                      children: [
-                        isAdmin ? ListTile(
-                          leading: const SizedBox(
-                            width: 40,
-                            // Adjust this value to add space to the left of the icon
-                            child: Icon(
-                                Icons.admin_panel_settings_outlined, color: Colors.black54),
-                          ),
-                          title: const Text('Admin Panel', style: TextStyle(
-                              color: Colors.black87)),
-                          onTap: () => print('Admin Panel'),
-                        ) :
-                        SizedBox(width: 0),
-                        ListTile(
-                          leading: const SizedBox(
-                            width: 40,
-                            // Adjust this value to add space to the left of the icon
-                            child: Icon(Icons.notifications_none_rounded,
-                                color: Colors.black54),
-                          ),
-                          title: const Text('Notification', style: TextStyle(
-                              color: Colors.black87)),
-                          onTap: () => print('Notification'),
-                        ),
-                        ListTile(
-                          leading: const SizedBox(
-                            width: 40,
-                            // Adjust this value to add space to the left of the icon
-                            child: Icon(
-                                Icons.schedule_rounded, color: Colors.black54),
-                          ),
-                          title: const Text('My Rides', style: TextStyle(
-                              color: Colors.black87)),
-                          onTap: () => print('My Rides'),
-                        ),
-                        ListTile(
-                          leading: const SizedBox(
-                            width: 40,
-                            // Adjust this value to add space to the left of the icon
-                            child: Icon(
-                                Icons.help_outline_rounded, color: Colors.black54),
-                          ),
-                          title: const Text('Support', style: TextStyle(
-                              color: Colors.black87)),
-                          onTap: () => print('Support'),
-                        ),
-                        ListTile(
-                          leading: const SizedBox(
-                            width: 40,
-                            // Adjust this value to add space to the left of the icon
-                            child: Icon(
-                                Icons.info_outline_rounded, color: Colors.black54),
-                          ),
-                          title: const Text('About', style: TextStyle(
-                              color: Colors.black87)),
-                          onTap: () {
-                            Navigator.push(context,
-                                MaterialPageRoute(
-                                  builder: (context) => AboutPage(),
-                                ));
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-                  // Add spacing between header and list items
-
-                  /// 2nd Drawer Navigation (Expandable)
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white, // Background color for the list items
-                        borderRadius: BorderRadius.all(Radius.circular(24.0)),
-                      ),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Padding(
-                              padding: EdgeInsets.only(left: 10.0),
-                              // Adjust the left padding as needed
-                              child: Icon(
-                                  Icons.logout_rounded, color: Colors.black54),
+                    child: FutureBuilder<String>(
+                      future: fetchUserData.fetchUserName(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return const Center(child: Text('Error fetching name'));
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2.0),
+                              child: InkWell(
+                                onTap: () => print('Name clicked'),
+                                child: Text(
+                                  snapshot.data ?? 'Unknown User',
+                                  style: const TextStyle(color: Colors.black, fontSize: 18),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ),
-                            title: const Padding(
-                              padding: EdgeInsets.only(left: 8.0),
-                              // Adjust the left padding as needed
-                              child: Text('Log out',
-                                  style: TextStyle(color: Colors.black87)),
+                            const SizedBox(height: 4),
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+                              },
+                              child: const Text(
+                                'My Account',
+                                style: TextStyle(color: Colors.green),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            onTap: () => logOut(context),
-                          ),
-                        ],
-                      ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        }
+            const SizedBox(height: 8),
+            // Drawer items
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(24.0)),
+              ),
+              child: Column(
+                children: [
+                  if (isAdmin)
+                    ListTile(
+                      leading: const Icon(Icons.admin_panel_settings_outlined, color: Colors.black54),
+                      title: const Text('Admin Panel', style: TextStyle(color: Colors.black87)),
+                      onTap: () => print('Admin Panel'),
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_none_rounded, color: Colors.black54),
+                    title: const Text('Notification', style: TextStyle(color: Colors.black87)),
+                    onTap: () => print('Notification'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.schedule_rounded, color: Colors.black54),
+                    title: const Text('My Rides', style: TextStyle(color: Colors.black87)),
+                    onTap: () => print('My Rides'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.help_outline_rounded, color: Colors.black54),
+                    title: const Text('Support', style: TextStyle(color: Colors.black87)),
+                    onTap: () => print('Support'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline_rounded, color: Colors.black54),
+                    title: const Text('About', style: TextStyle(color: Colors.black87)),
+                    onTap: () {
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AboutPage()));
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Logout button
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(24.0)),
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.logout_rounded, color: Colors.black54),
+                      title: const Text('Log out', style: TextStyle(color: Colors.black87)),
+                      onTap: () => logOut(context),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:driver_application/pages/menu_page.dart';
@@ -16,6 +18,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  FlutterLocalNotificationsPlugin();
+
   double containerHeight = 100;
   double bottomPadding = 0;
   int selectedIndex = 0;
@@ -25,6 +31,44 @@ class _HomePageState extends State<HomePage> {
   Position? currentPositionUser;
 
   GlobalKey<ScaffoldState> sKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize local notifications for showing foreground notifications
+    var androidSettings = const AndroidInitializationSettings('@mipmap/ic_launcher');
+    var initializationSettings = InitializationSettings(android: androidSettings);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // Request notification permissions
+    _firebaseMessaging.requestPermission();
+
+    // Listen to foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("Foreground notification received: ${message.notification?.title}");
+      _showNotification(message);
+    });
+  }
+
+  ///FOR FOREGROUND NOTIFICATION
+  Future<void> _showNotification(RemoteMessage message) async {
+    var androidDetails = const AndroidNotificationDetails(
+      'channel_id', 'channel_name',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+
+    var notificationDetails = NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      message.notification?.title,
+      message.notification?.body,
+      notificationDetails,
+    );
+  }
 
   /// Controller for DraggableScrollableSheet
   final DraggableScrollableController _draggableController = DraggableScrollableController();
@@ -222,7 +266,6 @@ class _HomePageState extends State<HomePage> {
                 child: ListView(
                   controller: scrollController,
                   children: [
-                    /// "Where to?" button inside the bottom sheet
                     GestureDetector(
                       onTap: expandBottomTopSheet,
                       child: Padding(
@@ -237,25 +280,26 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Container(
-                                margin: const EdgeInsets.only(right: 8.0, left: 8.0),
-                                padding: const EdgeInsets.all(6.0),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey.shade300,
-                                ),
-                                child: const Icon(
-                                  Icons.search,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const Expanded(
-                                child: Text(
-                                  'Where to?',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.w600,
+                              // Search button removed
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {},
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(double.infinity, 50),
+                                    backgroundColor: Color.fromARGB(255, 75, 201, 104),
+                                    side: const BorderSide(
+                                        color: Color.fromARGB(150, 75, 201, 104), width: 2),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Go Online",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -264,12 +308,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    // Add more widgets as per your need
                   ],
                 ),
               );
             },
           ),
+
         ],
       ),
     );

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-class ValidateDriver extends StatefulWidget {
+class SetUpToken extends StatefulWidget {
   final String driverToken;
 
-  const ValidateDriver({super.key,
+  const SetUpToken({super.key,
     required this.driverToken
   });
 
   @override
-  _ValidateDriverState createState() => _ValidateDriverState();
+  _SetUpTokenState createState() => _SetUpTokenState();
 }
 
-class _ValidateDriverState extends State<ValidateDriver> {
+class _SetUpTokenState extends State<SetUpToken> {
   String driverToken = 'No driver token received';
 
 
