@@ -137,19 +137,19 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                    child: Column(
-                      children:[
-                        CircleAvatar(
-                          radius: 65.0,
-                          backgroundImage: driverData['picUrl'] != null && driverData['picUrl'].isNotEmpty
-                              ? NetworkImage(driverData['picUrl']) // Load the image from the network
-                              : const AssetImage('assets/images/driver.png') as ImageProvider, // Fallback to a local image if URL is null or empty
-                        ),
-                        const SizedBox(height: 8),
-                        Text('${driverData['name'] ?? 'N/A'}', style: const TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
-                        )
-                      ]
-                    )
+                      child: Column(
+                          children:[
+                            CircleAvatar(
+                              radius: 65.0,
+                              backgroundImage: driverData['picUrl'] != null && driverData['picUrl'].isNotEmpty
+                                  ? NetworkImage(driverData['picUrl']) // Load the image from the network
+                                  : const AssetImage('assets/images/driver.png') as ImageProvider, // Fallback to a local image if URL is null or empty
+                            ),
+                            const SizedBox(height: 8),
+                            Text('${driverData['name'] ?? 'N/A'}', style: const TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
+                            )
+                          ]
+                      )
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -173,7 +173,6 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          //const SizedBox(height: 2.0), // Adds space between the two text fields
                           Text('${driverData['name'] ?? 'N/A'}', style: const TextStyle(fontSize: 20)),
                         ],
                       ),
@@ -184,7 +183,6 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(3.0), // Adjust padding to control the space around the icon
-
                         child: const Icon(
                           Icons.phone,
                           size: 30, // Icon size
@@ -202,7 +200,6 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          //const SizedBox(height: 2.0), // Adds space between the two text fields
                           Text('${driverData['phone'] ?? 'N/A'}', style: const TextStyle(fontSize: 18)),
                         ],
                       ),
@@ -215,8 +212,8 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                         width: 40.0, // Width of the container (same size as the icon would have been)
                         height: 40.0, // Height of the container (same size as the icon would have been)
                         child: Image.asset(
-                            'assets/images/PLATE_NUMBER.png', // Replace with the image path you want to use
-                            fit: BoxFit.cover, // Ensures the image covers the container properly
+                          'assets/images/PLATE_NUMBER.png', // Replace with the image path you want to use
+                          fit: BoxFit.cover, // Ensures the image covers the container properly
                         ),
                       ),
                       const SizedBox(width: 16.0), // Adds space between the image and the text
@@ -359,7 +356,7 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                         children: [
                           driverData['licenseUrl'] != null
                               ? const Icon(Icons.image, size: 40) // Use an icon or thumbnail
-                              : const Text('No License Picture'),
+                              : const Text('No Driver\'s License Picture'),
                           const SizedBox(width: 16.0), // Adds space between the image and the text
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,7 +369,7 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                                 ),
                               ),
                               Text(
-                                '${driverData['name'] + '_d-license.png' ?? 'N/A'}',
+                                '${driverData['name'] + '_drivers-license.png' ?? 'N/A'}',
                                 style: const TextStyle(fontSize: 18),
                               ),
                             ],
@@ -382,34 +379,38 @@ class _ValidateDriverPageState extends State<ValidateDriverPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal:  20),
-                    child: OutlinedButton(
-                      onPressed: () {
-                        updateStatus(widget.driverUid);
-                        showSuccessDialog(context, 'Driver Validated!');
-                      },
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: Color.fromARGB(255, 75, 201, 104),
-                        side: const BorderSide(
-                            color: Color.fromARGB(150, 75, 201, 104), width: 2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: const Text(
-                        "Validate Driver",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  )
-                ],
 
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          updateStatus(widget.driverUid);
+                          showSuccessDialog(context, 'Driver Validated!');
+                        },
+                        child: const Text('Validate Driver'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), // Text color
+                        ),
+                      ),
+                      const SizedBox(width: 16), // Adds space between the buttons
+                      ElevatedButton(
+                        onPressed: () {
+                          // Logic for invalidating the driver
+                        },
+                        child: const Text('Invalidate Driver'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12), // Text color
+                        ),
+                      ),
+
+                    ],
+                  ),
+                ],
               ),
             ),
           );

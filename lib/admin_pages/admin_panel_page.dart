@@ -148,7 +148,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                                 });
                               }
                             }),
-                            _buildStatCard('Pending Drivers', totalPendingDrivers.toString(), Colors.red, () {
+                            _buildStatCard('Pending Drivers', totalPendingDrivers.toString(), Colors.redAccent, () {
                               if (totalPendingDrivers == 0) {
                                 showNoDriversDialog(context, 'No Pending Drivers', 'There are currently no pending drivers yet.');
                               } else {
@@ -162,7 +162,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                                 });
                               }
                             }),
-                            _buildStatCard('Approved Drivers', totalApprovedDrivers.toString(), Colors.blue, () {
+                            _buildStatCard('Approved Drivers', totalApprovedDrivers.toString(), Colors.deepOrangeAccent, () {
                               if (totalApprovedDrivers == 0) {
                                 showNoDriversDialog(context, 'No Approved Drivers', 'There are currently no approved drivers yet.');
                               } else {
@@ -176,7 +176,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                                 });
                               }
                             }),
-                            _buildStatCard('Minimum Fare', 'PHP $minFare', Colors.blue, () {
+                            _buildStatCard('Minimum Fare', 'PHP $minFare', Colors.blueAccent, () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => ManageFarePage()),
@@ -200,7 +200,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
     return InkWell(
       onTap: onTap,
       child: Card(
-        color: color.withOpacity(0.2),
+        color: color.withOpacity(0.5),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(

@@ -1,19 +1,22 @@
 import 'dart:io';
 import 'package:driver_application/api/firebase_api.dart';
+import 'package:driver_application/methods/fetchUserData.dart';
+import 'package:driver_application/methods/topic_subscription.dart';
 import 'package:driver_application/pages/home_page.dart';
-import 'package:driver_application/pages/validate_driver.dart';
-import 'package:driver_application/testingpurposes/access_data.dart';
-import 'package:driver_application/widgets/bottom_navigation_bar.dart';
-import 'package:driver_application/widgets/setup_token.dart';
+import 'package:driver_application/authentication/login_screen.dart';
+import 'package:driver_application/admin_pages/pending_drivers_page.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // Import Firebase Messaging
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'appInfo/app_info.dart';
-import 'authentication/login_screen.dart';
+import 'methods/notification_service.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,37 +66,34 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String? _driverToken;
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   @override
   void initState() {
     super.initState();
 
+    NotificationService.initialize(context);
     _submitTokenToDatabase(context);
+    _printToken(context);
+    _subsribeToAdmin(context);
   }
 
-  // When notification tapped, pass the context
-  void onNotificationTapped(String payload) {
-    // Navigate to your desired screen here
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ValidateDriverPage(driverUid: payload)),
-    );
-  }
-
-  Future<void> onSelectNotification(String? payload) async {
-    if (payload != null) {
-      // Navigate to the desired screen using the payload
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ValidateDriverPage(driverUid: payload)),
-      );
+  Future<void> _subsribeToAdmin(BuildContext context) async{
+    if(await fetchUserData.fetchIsAdmin()){
+      subscribeDriverToAdminTopic();
     }
+  }
+
+  Future<void> _printToken(BuildContext context) async{
+    await messaging.requestPermission();
+
+    String? token = await messaging.getToken();
+
+    print('Token: $token');
   }
 
   Future<void> _submitTokenToDatabase(BuildContext context) async {
     try {
-      FirebaseMessaging messaging = FirebaseMessaging.instance;
       await messaging.requestPermission();
 
       String? token = await messaging.getToken();
@@ -109,9 +109,9 @@ class _MyAppState extends State<MyApp> {
 
         await FirebaseDatabase.instance
             .ref()
-            .child("users")
+            .child("drivers")
             .child(firebaseUser.uid)
-            .update(tokenDataMap); // Use `update` to avoid overwriting other data
+            .update(tokenDataMap);
 
         print("Token: $token updated");
       }
@@ -126,24 +126,24 @@ class _MyAppState extends State<MyApp> {
       create: (context) => AppInfo(),
       child: MaterialApp(
         title: 'Users App',
+        navigatorKey: navigatorKey,  // Set the navigator key here
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xffefefef)),
           useMaterial3: true,
-          fontFamily: 'Roboto', // Set default font family
+          fontFamily: 'Roboto',
         ),
         debugShowCheckedModeBanner: false,
         home: AuthCheck(),
         routes: {
           '/login': (context) => const LoginScreen(),
-          '/home': (context) => MainScreen(),
-          // Other routes can be added here
+          '/home': (context) => HomePage(),
+          '/pending_drivers': (context) => PendingDriversPage(),
         },
       ),
     );
   }
 }
 
-// New widget to check user authentication status
 class AuthCheck extends StatelessWidget {
   const AuthCheck({super.key});
 
@@ -153,18 +153,15 @@ class AuthCheck extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Show a loading indicator while checking auth status
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
             ),
           );
         } else if (snapshot.hasData) {
-          // User is logged in, navigate to home screen
-          return MainScreen();
+          return HomePage();  // User is logged in, navigate to home
         } else {
-          // User is not logged in, navigate to login screen
-          return const LoginScreen();
+          return const LoginScreen();  // Not logged in, navigate to login
         }
       },
     );

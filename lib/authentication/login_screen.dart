@@ -47,43 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String phoneNumberError = '';
   String passwordError = '';
 
-  void initState() {
-    super.initState();
-
-    // Initialize local notifications for showing foreground notifications
-    var androidSettings = const AndroidInitializationSettings('@mipmap/ic_launcher');
-    var initializationSettings = InitializationSettings(android: androidSettings);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
-    // Request notification permissions
-    _firebaseMessaging.requestPermission();
-
-    // Listen to foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print("Foreground notification received: ${message.notification?.title}");
-      _showNotification(message);
-    });
-  }
-
-  ///FOR FOREGROUND NOTIFICATION
-  Future<void> _showNotification(RemoteMessage message) async {
-    var androidDetails = const AndroidNotificationDetails(
-      'channel_id', 'channel_name',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-    );
-
-    var notificationDetails = NotificationDetails(android: androidDetails);
-
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      message.notification?.title,
-      message.notification?.body,
-      notificationDetails,
-    );
-  }
-
   validateLogInForm() async {
     final String password = passwordTextEditingController.text.trim();
     String phoneNumber = "+63" + _phoneNumberController.text.trim();  // Assuming you have a phone controller

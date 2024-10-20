@@ -29,14 +29,14 @@ class PushNotificationService {
     final serviceAccountJson = {
       "type": "service_account",
       "project_id": "trike-toda-application",
-      "private_key_id": "547c09337479b98dbb84e616499dbd0497cc38a5",
-      "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDnxFXViNQ63Hkj\nIwPbUCvSBs6aeEUXH4Uj4ZMRJvUgC8lqzuA/wWpKNJ0lT2On2/kBmQKlKLcLmAoi\neyWDJxjCgi71XOjGJXOmPZ5ogU+YLP/EgnfyT/bmpCFlDmcoaAXwbVIh92FZRgn+\n9RYMHBJW5ei4TEFh/vw+L5vI/BwPhXT8qnjFySGvJJbvkC85iNv2+lZj7/DtZ6Ku\nsBtmoxaxkd1wxBoKAi2bSYoVLTfoXjZXzhBd4m/uf+MkZyfD6RA3vLvMxC6AYkd2\nYwNTKZi9pAY1YDAFh2XDlQ4Kzfp6kPYtIyA1UNAOF2f3fUxx1DEv7wKRMqFcl3fa\nRsmmfMDXAgMBAAECggEAB1uYTf+2CthWInW3QjMmg0Yi59WmMriWBXmX0jndP3fE\n5cRMtIKX/dHzf8e6k+kVAF0gVF8ZYtaN9z2yvge83FkZHItLsafUcBRabMgOKIqc\nCKULtBLErGyoW+Rgl7mDaQqYk8XCvo7Nhd1ulAmN0loiLBeoy7jImmVePnKigWuU\nUKoxcreDqGVJxKGG1qIrZi/RpX0SIuxzdyqURzeVb2FbNWSD2+YcqrhJKMH3S04/\nGCwb9gYIy9DmuQOMBdUD5d7LUKNf1I+9IDvakE9MWCOrLCN0z1b+lzN3fORKuXge\n7NWFHSzLBzDcsLzgxYp8DCPFk/eo8rJO2zvOg5JWAQKBgQD6bkkEhUg5XzFAdkd7\nxrBwgZjISNFy0KAzxSpIikn13EveNjEJhVvR+30rJYkjFN72SC49D6A6o6y9N5B1\nDf/q6LvKqc3yIeKLUkaN5V9OAL8SHQH2oUxmjOr05C9rJ0GoBS8kRCFRCocoHU4/\npe0V3QNjiXA63v2XkHG0I2tHwQKBgQDs68u23VFd4d5merTnUWTuVSJv2itn0yCA\n9W9SiMQhc+bUbFFhmvoZJh1QHONIswj5YfxEYjEymo8OfLIUV7UvOAhRvhZPXF9T\nPctl8MKeMfWhpRZSE/XI8e3T69306wp+RX+7fMxVZGTz7mF82tRrb6EXgQh1G0IU\nDt2oZYDulwKBgGm4s0SgS7xErpMrG8RqPcRRQcGT1DAnWOpiGxaiotSTWsgFkrAV\nR40fIVlcsEdKIVJRaIvIk/kNbfg3g9mWvmpaNCU7iEDnAy+T3Us8AP76G6+25URM\nFefZJ7uYtVgEK5iWD6+8v1/qFOLfdFA0aSFou2yC8gk4aFBa31WP+lNBAoGBAOPr\nZzvRJ8CgVLrTmwrZU7awMgPWp2EnS6Kj+mc06TGhdVOvrI6wb58X+qUiVUiP67c1\nm2ER8XBUHgF61joZslTtm5s/uei43X+P+AdmmWNkfn/1+EYXq6CXlQsFYq6GGr8l\nDt+IDG6tuSytjB13y1hbuGaLHF7ETUpMjtK8a0+bAoGBAOidoGRhRnJDOLh3O/iY\nydYGkognOCAKn+uNw8OoDyiaQaKEd1JQQcSSp1yLXTT++85AA8CCmHFA2lf/FdOm\nH3aTMsCfvg1qRqTg1+JxPY8HchoDhFi1rdJDj8AsM3tAa4F+431RA+FgK/Z9o6Ga\n4qwMEKvFfa7NSK5fvoX+oSbr\n-----END PRIVATE KEY-----\n",
-      "client_email": "trike-app@trike-toda-application.iam.gserviceaccount.com",
-      "client_id": "102947107974353290789",
+      "private_key_id": "13f32bdcbc0bdb6e3aa45e551ee5409a9c7f9858",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDBnlHthqImy3jY\nbB3RrGT5GaF5h89li1d6idhypyEs6VHN7lKHxPaXY0BUVl70rS90AnarxAuMSsJ8\njBzLlwSHyb1Jkxp5ZEe6qiGkbyicnC11AOcXX4Kl0CG/JPT3adaetzcw2nsSMB0i\ncWUmbMen83Jy5S83Tt5d8EWNFDQvbcpqaaqk/Nd3szWl5GI2+N4HjzqOrFwCv2yF\nQgnmm6DHfuDo/ZXli1vwrEXbH0/tvAqcxtspeYeF8fFZl6aqvHrCoWBDa6g/y2ls\nAGs8YapfG4OFdwMI/VHg9fO2m6V408bO7kURdGSrBFpusVG5IpiNB9Q507K/hbbt\nBUWCMiZtAgMBAAECggEABm48Xl04XtLR4q5El0WDMlrNktHAllN4cP4fDZUgyZ2+\nNSQTOFCBuCl4ZioFjAQsgqKKT84lFrXCRoyzcCJF6On5usst9+uCuQpphPfu1goX\nNb71Q0DNgAsCSUJFoz9ap3mCVcG2kLYUYaPOg5DdWLtXM8W05Gte1f6Nm3qY+Rzn\nmqu6ViaA3WfffMF6LHksJQdIhPo7UvbT55DE8K8ptpTrtg3iRrGTQJsmXKBJ8U0E\nlwmi4ICuA2f+rnfNmBRaEfhno/m9pKe14D7p/I+w79CKmnznBcbQCJz7Kb9JMfmC\nbuveWaV27Dx3G0ZYYKu55ueLiEiUOXx0pXpzjKm76QKBgQDg7DIIsO46LmIW6yFM\nrYCkrVqPU4Y0CXI3Xe8rLm7j40bAXJ4mwh63ZWUxQcPiRti287nBodvpynS/Tpxz\n4XABBkPDwZmLzmfyxCv5Jr+SL4zE6gw+FapuiuU22B8eJeENSYAlYvwKBA9f9jRB\nE1ZKx4HQLNvVRK2LbILpD3zB/wKBgQDcXtrCHVt9suxXB80q8rDXAYQR/g9N3Fn2\n2hd0xuc44i87kAbzqEOQSyvqhUln+fcZKXSvlcf5TVNk3/T/NUWi8K+Xwgfdb20L\njmlQWkcLToLvLVAXCqFRVLEHWUxGkW8wBb9cbQWTxJanO41WE1In+8ScpspUQmO4\nLCuttC8/kwKBgAI3kc6wH8kHCAR90Ng2pZv58XiUNDBzH2MYU/EzBfjNFrdyskRj\niXX5U+QGZ+3lEOHMyTn1ZHuLeVchaT1jLX11GFnnoKHWKQQlluFf1meUfGi8fd5m\nzEVGrTe7LaNYcD13SgIUVbOrkpM5lA5IKIOYL9ljd89EXAmRykCN3Ib1AoGAS34H\nLOaHuCj6Q9o9U9At+onfZ5aEQaUSALm3vV6CSX9atOnjJ8dl1eGams2sVv1PxAPq\noFgMWIA/6Fe8g00JnQcc8D0dGqOYVJQlycwTeHEd87evLyWKG+WKe70An1AlKete\nIdiLR5LaFVIWWf1mcKIUOaH9wB26MZaYI/qNERcCgYEAmXV3gM5Gmhp7hal86mTK\nqRwJD0PoBrRuUbJEZ8VomvY6uWLx95ETq0sLZoMDyFZh5+lAN9dH3C+p3x1Xlf98\nd2FsaMxEg//1jvc9B2Frph/V48iP9wjaz+0ABFJCdvn1Nf2cwOlF+wr2EuZBXheO\n3i0xq6x6ZiU2HIfnsl097qs=\n-----END PRIVATE KEY-----\n",
+      "client_email": "firebase-adminsdk-qzyv3@trike-toda-application.iam.gserviceaccount.com",
+      "client_id": "117179318207878840248",
       "auth_uri": "https://accounts.google.com/o/oauth2/auth",
       "token_uri": "https://oauth2.googleapis.com/token",
       "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/trike-app%40trike-toda-application.iam.gserviceaccount.com",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-qzyv3%40trike-toda-application.iam.gserviceaccount.com",
       "universe_domain": "googleapis.com"
     };
 
@@ -87,7 +87,7 @@ class PushNotificationService {
 
     final Map<String, dynamic> message = {
       'message': {
-        'token': deviceToken,
+        'topic' : 'admin',
         'notification': {
           'title': "New Driver Registered!",
           'body': "$name registered as a new driver."
@@ -95,7 +95,8 @@ class PushNotificationService {
         'data': {
           'newDriverRegistered' : '$name',
           'driverToken': token,
-          'driverUid' : getCurrentUserUid()
+          'driverUid' : getCurrentUserUid(),
+          'page' : 'pending_driver'
         }
       }
     };
@@ -157,6 +158,7 @@ class PushNotificationService {
           'body': notificationBody,
         },
         'data': {
+          'page' : 'login',
           'newDriverRegistered': name,
           'driverToken': token,
           'driverUid': getCurrentUserUid(),

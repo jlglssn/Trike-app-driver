@@ -88,6 +88,40 @@ class fetchUserData{
     }
   }
 
+  static Future<String?> getAdminToken() async {
+    final DatabaseReference databaseRef = FirebaseDatabase.instance.ref();
+
+    try {
+      // Reference to the 'drivers' node
+      DatabaseReference driversRef = databaseRef.child('drivers');
+
+      // Retrieve all the drivers
+      DataSnapshot snapshot = await driversRef.get();
+
+      if (snapshot.exists) {
+        // Loop through each driver in the 'drivers' node
+        for (var child in snapshot.children) {
+          Map<String, dynamic> driverData = Map<String, dynamic>.from(child.value as Map);
+
+          // Check if the user is an admin
+          if (driverData['isAdmin'] == true) {
+            // Return the token of the admin user
+            return driverData['token'] as String?;
+          }
+        }
+
+        print('No admin user found.');
+        return null;
+      } else {
+        print('Drivers node does not exist.');
+        return null;
+      }
+    } catch (e) {
+      print('Error retrieving admin token: $e');
+      return null;
+    }
+  }
+
   static Future<String> fetchUserNumber() async {
     final userId = await UserService.instance.getCurrentUserId();
     if (userId == null) {

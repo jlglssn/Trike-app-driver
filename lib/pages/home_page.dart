@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:driver_application/methods/topic_subscription.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,9 @@ import 'package:driver_application/pages/menu_page.dart';
 import '../global.dart';
 import '../methods/geocoding_methods.dart';
 import 'package:driver_application/widgets/top_modal_sheet.dart';
+
+import '../methods/notification_service.dart';
+import '../methods/online_status_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,6 +26,8 @@ class _HomePageState extends State<HomePage> {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
+
+  final DatabaseReference _notificationsRef = FirebaseDatabase.instance.ref('notifications');
 
   double containerHeight = 100;
   double bottomPadding = 0;
@@ -35,40 +42,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
-    // Initialize local notifications for showing foreground notifications
-    var androidSettings = const AndroidInitializationSettings('@mipmap/ic_launcher');
-    var initializationSettings = InitializationSettings(android: androidSettings);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
-    // Request notification permissions
-    _firebaseMessaging.requestPermission();
-
-    // Listen to foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print("Foreground notification received: ${message.notification?.title}");
-      _showNotification(message);
-    });
+    NotificationService.initialize(context);
   }
 
-  ///FOR FOREGROUND NOTIFICATION
-  Future<void> _showNotification(RemoteMessage message) async {
-    var androidDetails = const AndroidNotificationDetails(
-      'channel_id', 'channel_name',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-    );
-
-    var notificationDetails = NotificationDetails(android: androidDetails);
-
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      message.notification?.title,
-      message.notification?.body,
-      notificationDetails,
-    );
-  }
 
   /// Controller for DraggableScrollableSheet
   final DraggableScrollableController _draggableController = DraggableScrollableController();
@@ -167,8 +143,8 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       key: sKey,
-      drawer: Drawer(
-        child: const MenuPage(),
+      drawer: const Drawer(
+        child: MenuPage(),
       ),
       body: Stack(
         children: [
@@ -270,40 +246,28 @@ class _HomePageState extends State<HomePage> {
                       onTap: expandBottomTopSheet,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(12.0, 0.0, 12.0, 20),
-                        child: Container(
-                          height: 50.0,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8.0),
-                            color: Colors.grey.shade200,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              // Search button removed
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () {},
-                                  style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size(double.infinity, 50),
-                                    backgroundColor: Color.fromARGB(255, 75, 201, 104),
-                                    side: const BorderSide(
-                                        color: Color.fromARGB(150, 75, 201, 104), width: 2),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    "Go Online",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                        child: Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              subscribeDriverToTopic();
+                            },
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 50),
+                              backgroundColor: Color.fromARGB(255, 75, 201, 104),
+                              side: const BorderSide(
+                                  color: Color.fromARGB(150, 75, 201, 104), width: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ],
+                            ),
+                            child: const Text(
+                              "Go Online",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -313,9 +277,9 @@ class _HomePageState extends State<HomePage> {
               );
             },
           ),
-
         ],
       ),
     );
   }
+
 }

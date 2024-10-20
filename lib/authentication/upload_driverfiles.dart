@@ -394,22 +394,22 @@ class _UploadDriverFilesScreenState extends State<UploadDriverFilesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);  // Navigate back to the previous page
-            },
-          ),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: false, // Removes default back button
-          title: const Text(
-            "Additional Driver Information",
-            style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true, // Center the title
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);  // Navigate back to the previous page
+          },
         ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false, // Removes default back button
+        title: const Text(
+          "Additional Driver Information",
+          style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true, // Center the title
+      ),
       // Added an AppBar for better UX
       body: SingleChildScrollView( // Enable scrolling for the entire body
         child: Padding(
@@ -418,70 +418,70 @@ class _UploadDriverFilesScreenState extends State<UploadDriverFilesScreen> {
             children: [
               // Container for Pic Btn
               Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: bodyNumberTextEditingController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: "Body Number",
-                        labelStyle: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        hintText: "1-2345",  // Hint for expected input
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                        errorText: bodyNumberError.isEmpty ? null : bodyNumberError,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.blue, width: 2),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey, width: 1),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20,),
-                    TextField(
-                      controller: plateNumberTextEditingController,
-                      keyboardType: TextInputType.text,
-                      decoration: InputDecoration(
-                        labelText: "Plate Number",
-                        labelStyle: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        hintText: "ABC123",  // Hint for expected input
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                        errorText: plateNumberError.isEmpty ? null : plateNumberError,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.blue, width: 2),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: bodyNumberTextEditingController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: "Body Number",
+                          labelStyle: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          hintText: "1-2345",  // Hint for expected input
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                          errorText: bodyNumberError.isEmpty ? null : bodyNumberError,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.blue, width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.grey, width: 1),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                )
+                      SizedBox(height: 20,),
+                      TextField(
+                        controller: plateNumberTextEditingController,
+                        keyboardType: TextInputType.text,
+                        decoration: InputDecoration(
+                          labelText: "Plate Number",
+                          labelStyle: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          hintText: "ABC123",  // Hint for expected input
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                          errorText: plateNumberError.isEmpty ? null : plateNumberError,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.blue, width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.grey, width: 1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
               ),
               Container(
                 padding: EdgeInsets.all(15),
@@ -521,27 +521,27 @@ class _UploadDriverFilesScreenState extends State<UploadDriverFilesScreen> {
                             ),
                             const SizedBox(height: 10), // Space before the button
                             OutlinedButton(
-                                onPressed: () {
-                                  selectFile(0);
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(50, 50),
-                                  backgroundColor: Color.fromARGB(150, 75, 201, 104),
-                                  side: const BorderSide(
-                                      color: Color.fromARGB(150, 75, 201, 104), width: 2),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Select File",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              onPressed: () {
+                                selectFile(0);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(50, 50),
+                                backgroundColor: Color.fromARGB(150, 75, 201, 104),
+                                side: const BorderSide(
+                                    color: Color.fromARGB(150, 75, 201, 104), width: 2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
                                 ),
                               ),
+                              child: const Text(
+                                "Select File",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ],
                         )
                             : Column(

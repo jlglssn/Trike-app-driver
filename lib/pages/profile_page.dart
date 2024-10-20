@@ -204,55 +204,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           SizedBox(height: height),
-                          //Notification
-                          Container(
-                            decoration: BoxDecoration(
-                              color: containerColor,
-                              borderRadius: const BorderRadius.all(Radius.circular(12.0)),
-                            ),
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  leading: Container(
-                                    width: 36, // Adjust the width as needed
-                                    height: 36, // Adjust the height as needed
-                                    decoration: BoxDecoration(
-                                      color: iconBGColor,
-                                      shape: BoxShape.circle, // Makes the container circular
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.notifications,
-                                        size: 20,
-                                        color: iconColor,
-                                      ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    'Notification',
-                                    style: TextStyle(
-                                      fontWeight: fontWeight,
-                                    ),
-                                  ),
-                                  trailing: Container(
-                                    width: 36,
-                                    height: 36,
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.circle_outlined,
-                                        size: 18,
-                                        color: iconColor,
-                                      ),
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    // Handle Allow Notifications tap
-                                  },
-                                )
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: height),
                           //Support
                           Container(
                             decoration: BoxDecoration(

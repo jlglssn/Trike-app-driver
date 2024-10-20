@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:driver_application/authentication/login_screen.dart';
 
 import '../global.dart';
+import '../methods/topic_subscription.dart';
 
 class OtpScreen extends StatefulWidget {
   final String verificationId;
@@ -28,17 +29,19 @@ class OtpScreen extends StatefulWidget {
   _OtpScreenState createState() => _OtpScreenState();
 }
 
-
 class _OtpScreenState extends State<OtpScreen> {
   final TextEditingController _otpController = TextEditingController();
   final FirebaseAuth auth = FirebaseAuth.instance;
-
-  bool isPasswordVisible = false; // Add this boolean to track the password visibility
+  bool _isLoading = false; // Add loading state
 
   final _firebaseMessaging = FirebaseMessaging.instance;
 
   Future<void> _submitOTP(BuildContext context) async {
     String otp = _otpController.text.trim();
+    setState(() {
+      _isLoading = true; // Start loading when OTP is submitted
+    });
+
     try {
       PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: widget.verificationId,
@@ -79,15 +82,12 @@ class _OtpScreenState extends State<OtpScreen> {
               .child(firebaseUser.uid)
               .update(adminDataMap);
 
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => UploadDriverFilesScreen()),
           );
         } else {
           // Just sign in the user for login without saving extra info
-
-          // Fetch user information from Firebase to check if they are admin
           DatabaseReference userRef = FirebaseDatabase.instance
               .ref()
               .child("drivers")
@@ -95,21 +95,22 @@ class _OtpScreenState extends State<OtpScreen> {
 
           DataSnapshot snapshot = await userRef.get();
           if (snapshot.exists) {
-              // User is not an admin
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => MainScreen()), // Normal user screen
-              );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MainScreen()), // Normal user screen
+            );
           }
         }
       }
     } catch (e) {
       print("Error during OTP verification: ${e.toString()}");
       showErrorDialog(context, "OTP verification failed. Please try again.");
+    } finally {
+      setState(() {
+        _isLoading = false; // Stop loading
+      });
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -127,52 +128,64 @@ class _OtpScreenState extends State<OtpScreen> {
         centerTitle: true,
       ),
       backgroundColor: Colors.white,
-      body: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              Image.asset(
-                'assets/images/otp.png',
-                width: double.infinity,
-                fit: BoxFit.cover,  // Optional: Adjust the fit as per your requirement
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _otpController,
-                decoration: InputDecoration(
-                  label: const Text("OTP Code"),
-                  prefixIcon: const Icon(Icons.password_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Color.fromARGB(255, 204, 245, 215), width: 2.0),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,  // Aligns the content to the left
+                children: <Widget>[
+                  Image.asset(
+                    'assets/images/otp.png',
+                    width: double.infinity,
+                    fit: BoxFit.cover,  // Optional: Adjust the fit as per your requirement
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Color.fromARGB(255, 204, 245, 215), width: 2.0),
-                  ),
-                ),
-                keyboardType: TextInputType.numberWithOptions(signed: false, decimal: false),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: (){
-                    _submitOTP(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 75, 201, 104),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _otpController,
+                    decoration: InputDecoration(
+                      label: const Text("OTP Code"),
+                      prefixIcon: const Icon(Icons.password_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(color: Color.fromARGB(255, 204, 245, 215), width: 2.0),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(color: Color.fromARGB(255, 204, 245, 215), width: 2.0),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                    keyboardType: TextInputType.numberWithOptions(signed: false, decimal: false),
                   ),
-                  child: const Text("Verify"),
-                ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _submitOTP(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 75, 201, 104),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                      ),
+                      child: const Text("Verify"),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
+          // Show loading indicator in the center of the screen
+          if (_isLoading)
+            Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
       ),
     );
   }
